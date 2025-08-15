@@ -194,6 +194,46 @@ class Obsidian():
 
         return self._safe_call(call_fn)
     
+    def fulltext_search(self, query: str, context_window: int = 200, use_regex: bool = False, 
+                       path: str = None, file_extension: str = ".md", case_sensitive: bool = False) -> Any:
+        """Perform advanced fulltext search with context snippets and filters.
+        
+        Args:
+            query: The search query string. Can be literal text or regex pattern.
+            context_window: Number of characters to include before and after each match for context.
+            use_regex: Whether to treat the query as a regular expression pattern.
+            path: Restrict search to files within this path (relative to vault root).
+            file_extension: File extension to search (.md, .txt, .* for all files, etc.).
+            case_sensitive: Whether the search should be case-sensitive.
+            
+        Returns:
+            List of search results with matches and context snippets
+        """
+        url = f"{self.get_base_url()}/search/fulltext/"
+        
+        data = {
+            "query": query,
+            "contextWindow": context_window,
+            "useRegex": use_regex,
+            "caseSensitive": case_sensitive
+        }
+        
+        if path is not None:
+            data["path"] = path
+        if file_extension != ".md":
+            data["fileExtension"] = file_extension
+        
+        headers = self._get_headers() | {
+            'Content-Type': 'application/json'
+        }
+        
+        def call_fn():
+            response = requests.post(url, headers=headers, json=data, verify=self.verify_ssl, timeout=self.timeout)
+            response.raise_for_status()
+            return response.json()
+
+        return self._safe_call(call_fn)
+    
     def get_periodic_note(self, period: str, type: str = "content") -> Any:
         """Get current periodic note for the specified period.
         

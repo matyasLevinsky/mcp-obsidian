@@ -434,6 +434,102 @@ class ComplexSearchToolHandler(ToolHandler):
            )
        ]
 
+class FulltextSearchToolHandler(ToolHandler):
+    def __init__(self):
+        super().__init__("obsidian_fulltext_search")
+
+    def get_tool_description(self):
+        return Tool(
+            name=self.name,
+            description="""Advanced fulltext search with regex support, file filtering, and context extraction.
+            Use this tool for sophisticated text searches with precise control over search parameters.
+            Supports regex patterns, file extension filtering, path restrictions, and configurable context windows.
+            Perfect for finding specific patterns, searching within folders, or getting detailed match information.""",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query string. Can be literal text or regex pattern."
+                    },
+                    "context_window": {
+                        "type": "integer",
+                        "description": "Number of characters to include before and after each match for context.",
+                        "default": 200,
+                        "minimum": 0,
+                        "maximum": 1000
+                    },
+                    "use_regex": {
+                        "type": "boolean",
+                        "description": "Whether to treat the query as a regular expression pattern.",
+                        "default": False
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Restrict search to files within this path (relative to vault root). Example: 'work/' or 'notes/meetings'"
+                    },
+                    "file_extension": {
+                        "type": "string",
+                        "description": "File extension to search. Use '.md' for markdown files, '.*' for all files, or specify custom extensions like '.txt'.",
+                        "default": ".md"
+                    },
+                    "case_sensitive": {
+                        "type": "boolean",
+                        "description": "Whether the search should be case-sensitive.",
+                        "default": False
+                    }
+                },
+                "required": ["query"]
+            }
+        )
+
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        if "query" not in args:
+            raise RuntimeError("query argument missing in arguments")
+
+        # Extract parameters with defaults
+        query = args["query"]
+        context_window = args.get("context_window", 200)
+        use_regex = args.get("use_regex", False)
+        path = args.get("path")
+        file_extension = args.get("file_extension", ".md")
+        case_sensitive = args.get("case_sensitive", False)
+
+        api = obsidian.Obsidian(api_key=api_key, host=obsidian_host)
+        results = api.fulltext_search(
+            query=query,
+            context_window=context_window,
+            use_regex=use_regex,
+            path=path,
+            file_extension=file_extension,
+            case_sensitive=case_sensitive
+        )
+
+        # Format results to be more readable
+        formatted_results = []
+        for result in results:
+            formatted_matches = []
+            for match in result.get('matches', []):
+                formatted_matches.append({
+                    'line': match.get('line', 0),
+                    'snippet': match.get('snippet', ''),
+                    'match_start': match.get('matchStart', 0),
+                    'match_end': match.get('matchEnd', 0)
+                })
+                
+            formatted_results.append({
+                'filename': result.get('filename', ''),
+                'matches': formatted_matches,
+                'match_count': len(formatted_matches)
+            })
+
+        return [
+            TextContent(
+                type="text",
+                text=json.dumps(formatted_results, indent=2)
+            )
+        ]
+
 class BatchGetFileContentsToolHandler(ToolHandler):
     def __init__(self):
         super().__init__("obsidian_batch_get_file_contents")
