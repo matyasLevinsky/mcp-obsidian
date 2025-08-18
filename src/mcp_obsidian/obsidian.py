@@ -119,8 +119,8 @@ class Obsidian():
         def call_fn():
             response = requests.post(
                 url, 
-                headers=self._get_headers() | {'Content-Type': 'text/markdown; charset=utf-8'}, 
-                data=content.encode('utf-8'),
+                headers=self._get_headers() | {'Content-Type': 'text/markdown'}, 
+                data=content,
                 verify=self.verify_ssl,
                 timeout=self.timeout
             )
@@ -152,8 +152,8 @@ class Obsidian():
         def call_fn():
             response = requests.put(
                 url, 
-                headers=self._get_headers() | {'Content-Type': 'text/markdown; charset=utf-8'}, 
-                data=content.encode('utf-8'),
+                headers=self._get_headers() | {'Content-Type': 'text/markdown'}, 
+                data=content,
                 verify=self.verify_ssl,
                 timeout=self.timeout
             )
